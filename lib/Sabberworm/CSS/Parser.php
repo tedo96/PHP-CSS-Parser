@@ -762,18 +762,40 @@ class Parser {
 		}
 	}
 
+	/*
+	 * Ref: https://stackoverflow.com/a/14366023/4364106
+	 */
+	private function nextChar($sString, &$iPointer){
+		if (!isset($sString[$iPointer])) return false;
+		$sCharCode = ord($sString[$iPointer]);
+		if ($sCharCode < 128) {
+			return $sString[$iPointer++];
+		} else {
+			if ($sCharCode < 224) {
+				$iBytes = 2;
+			} elseif ($sCharCode < 240) {
+				$iBytes = 3;
+			} elseif ($sCharCode < 248) {
+				$iBytes = 4;
+			} elseif ($sCharCode == 252) {
+				$iBytes = 5;
+			} else {
+				$iBytes = 6;
+			}
+			$sChar = substr($sString, $iPointer, $iBytes);
+			$iPointer += $iBytes;
+			return $sChar;
+		}
+	}
+
 	private function strsplit($sString) {
 		if ($this->oParserSettings->bMultibyteSupport) {
-			if ($this->streql($this->sCharset, 'utf-8')) {
-				return preg_split('//u', $sString, null, PREG_SPLIT_NO_EMPTY);
-			} else {
-				$iLength = mb_strlen($sString, $this->sCharset);
-				$aResult = array();
-				for ($i = 0; $i < $iLength; ++$i) {
-					$aResult[] = mb_substr($sString, $i, 1, $this->sCharset);
-				}
-				return $aResult;
+			$iPos = 0;
+			$aResult = array();
+			while (($sChar = $this->nextChar($sString, $iPos)) !== false) {
+				$aResult[] = $sChar;
 			}
+			return $aResult;
 		} else {
 			if($sString === '') {
 				return array();
