@@ -454,6 +454,8 @@ class Parser {
 			$oValue = $this->parseMicrosoftFilter();
 		} else if ($this->comes("[")) {
 			$oValue = $this->parseLineNameValue();
+		} else if ($this->comes("U+")) {
+			$oValue = $this->parseUnicodeRangeValue();
 		} else {
 			$oValue = $this->parseIdentifier(true, false);
 		}
@@ -503,6 +505,17 @@ class Parser {
 		} while (!$this->comes(']'));
 		$this->consume(']');
 		return new LineName($aNames, $this->iLineNo);
+	}
+
+	private function parseUnicodeRangeValue() {
+		$iCodepointMaxLenth = 6; // Code points outside BMP can use up to six digits
+		$sRange = "";
+		$this->consume("U+");
+		do {
+			if ($this->comes('-')) $iCodepointMaxLenth = 13; // Max length is 2 six digit code points + the dash(-) between them
+			$sRange .= $this->consume(1);
+		} while (strlen($sRange) < $iCodepointMaxLenth && preg_match("/[A-Fa-f0-9\?-]/", $this->peek()));
+		return "U+{$sRange}";
 	}
 
 	private function parseColorValue() {
