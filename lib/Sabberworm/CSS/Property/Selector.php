@@ -38,7 +38,13 @@ class Selector {
 	/ix';
 
 	const SELECTOR_VALIDATION_RX = '/
-	^((?:[a-zA-Z0-9\x{00A0}-\x{FFFF}_\^\$\|\*\=\"\'\~\[\]\(\)\-\s\.:#\+\>]*(?:\\\\.)?(?:\'.*?\')?(?:\".*?\")?)*|\s*?[\+-]?\d+\%\s*)$
+	^(
+		(?:
+			[a-zA-Z0-9\x{00A0}-\x{FFFF}_^$|*="\'~\[\]()\-\s\.:#+>]* # any sequence of valid unescaped characters
+			(?:\\\\.)?                                              # a single escaped character
+			(?:([\'"]).*?(?<!\\\\)\2)?                              # a quoted text like [id="example"]
+		)*
+	)$
 	/ux';
 
 	private $sSelector;
@@ -49,9 +55,6 @@ class Selector {
 	}
 
 	public function __construct($sSelector, $bCalculateSpecificity = false) {
-		if (!Selector::isValid($sSelector)) {
-			throw new UnexpectedTokenException("Selector did not match '" . self::SELECTOR_VALIDATION_RX . "'.", $sSelector, "custom");
-		}
 		$this->setSelector($sSelector);
 		if ($bCalculateSpecificity) {
 			$this->getSpecificity();
