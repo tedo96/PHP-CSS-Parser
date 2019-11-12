@@ -789,4 +789,10 @@ body {background-url: url("http://somesite.com/images/someimage.gif");}';
 		$this->assertEquals(true, is_a($urlRule->getValue(), '\Sabberworm\CSS\Value\URL'));
 		$this->assertEquals(true, is_a($calcRule->getValue(), '\Sabberworm\CSS\Value\CalcFunction'));
 	}
+
+	function testLonelyImport() {
+		$oDoc = $this->parsedStructureForFile('lonely-import');
+		$sExpected = "@import url(\"example.css\") only screen and (max-width: 600px);";
+		$this->assertSame($sExpected, $oDoc->render());
+	}
 }
