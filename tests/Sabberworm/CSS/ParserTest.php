@@ -779,4 +779,14 @@ body {background-url: url("http://somesite.com/images/someimage.gif");}';
 		$sExpected = '.overlay {z-index: 10000000000000000000000;}';
 		$this->assertSame($sExpected, $oDoc->render());
 	}
+
+	function testEscapedSpecialCaseTokens() {
+		$oDoc = $this->parsedStructureForFile('escaped-tokens');
+		$contents = $oDoc->getContents();
+		$rules = $contents[0]->getRules();
+		$urlRule = $rules[0];
+		$calcRule = $rules[1];
+		$this->assertEquals(true, is_a($urlRule->getValue(), '\Sabberworm\CSS\Value\URL'));
+		$this->assertEquals(true, is_a($calcRule->getValue(), '\Sabberworm\CSS\Value\CalcFunction'));
+	}
 }
