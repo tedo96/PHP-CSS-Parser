@@ -7,6 +7,8 @@ use Sabberworm\CSS\Parsing\UnexpectedEOFException;
 use Sabberworm\CSS\Settings;
 
 class ParserState {
+	const EOF = null;
+
 	private $oParserSettings;
 
 	private $sText;
@@ -28,7 +30,9 @@ class ParserState {
 	public function setCharset($sCharset) {
 		$this->sCharset = $sCharset;
 		$this->aText = $this->strsplit($this->sText);
-		$this->iLength = count($this->aText);
+		if( is_array($this->aText) ) {
+			$this->iLength = count($this->aText);
+		}
 	}
 
 	public function getCharset() {
@@ -117,8 +121,7 @@ class ParserState {
 			if($this->oParserSettings->bLenientParsing) {
 				try {
 					$oComment = $this->consumeComment();
-				} catch(UnexpectedTokenException $e) {
-					// When we can’t find the end of a comment, we assume the document is finished.
+				} catch(UnexpectedEOFException $e) {
 					$this->iCurrentPosition = $this->iLength;
 					return;
 				}
@@ -213,29 +216,28 @@ class ParserState {
 		$out = '';
 		$start = $this->iCurrentPosition;
 
-		try {
-			while (($char = $this->consume(1)) !== '') {
-				if (in_array($char, $aEnd)) {
-					if ($bIncludeEnd) {
-						$out .= $char;
-					} elseif (!$consumeEnd) {
-						$this->iCurrentPosition -= $this->strlen($char);
-					}
-					return $out;
+		while (!$this->isEnd()) {
+			$char = $this->consume(1);
+			if (in_array($char, $aEnd)) {
+				if ($bIncludeEnd) {
+					$out .= $char;
+				} elseif (!$consumeEnd) {
+					$this->iCurrentPosition -= $this->strlen($char);
 				}
-				$out .= $char;
-				if ($comment = $this->consumeComment()) {
-					$comments[] = $comment;
-				}
+				return $out;
 			}
-		} catch (UnexpectedEOFException $e) {
-			// Reset the position and forward the EOF exception, so the caller can distinguish between EOF and the standard unexpected token error
-			$this->iCurrentPosition = $start;
-			throw $e;
+			$out .= $char;
+			if ($comment = $this->consumeComment()) {
+				$comments[] = $comment;
+			}
+		}
+
+		if (in_array(self::EOF, $aEnd)) {
+			return $out;
 		}
 
 		$this->iCurrentPosition = $start;
-		throw new UnexpectedTokenException('One of ("'.implode('","', $aEnd).'")', $this->peek(5), 'search', $this->iLineNo);
+		throw new UnexpectedEOFException('One of ("'.implode('","', $aEnd).'")', $this->peek(5), 'search', $this->iLineNo);
 	}
 
 	private function inputLeft() {

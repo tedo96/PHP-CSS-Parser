@@ -111,34 +111,15 @@ abstract class CSSList implements Renderable, Commentable {
 			$oLocation = URL::parse($oParserState);
 			$oParserState->consumeWhiteSpace();
 			$sMediaQuery = null;
-			try {
-				if (!$oParserState->comes(';')) {
-					$sMediaQuery = $oParserState->consumeUntil(';');
-				}
-				$oParserState->consume(';');
-			} catch (UnexpectedEOFException $e) {
-				// Save the media query if present
-				$sMediaQuery = '';
-				try {
-					while (!$oParserState->isEnd()) {
-						$sMediaQuery .= $oParserState->consume(1);
-					}
-				} catch (UnexpectedEOFException $e) {}
-
-				$sMediaQuery = trim($sMediaQuery);
-				if ($sMediaQuery === '') {
-					$sMediaQuery = null;
-				}
+			if (!$oParserState->comes(';')) {
+				$sMediaQuery = trim($oParserState->consumeUntil(array(';', ParserState::EOF)));
 			}
-			return new Import($oLocation, $sMediaQuery, $iIdentifierLineNum);
+			$oParserState->consumeUntil(array(';', ParserState::EOF), true, true);
+			return new Import($oLocation, $sMediaQuery ? $sMediaQuery : null, $iIdentifierLineNum);
 		} else if ($sIdentifier === 'charset') {
 			$sCharset = CSSString::parse($oParserState);
-			try {
-				$oParserState->consumeWhiteSpace();
-				$oParserState->consume(';');
-			} catch (UnexpectedEOFException $e) {
-				// Nothing fatal, file ended before ; was found
-			}
+			$oParserState->consumeWhiteSpace();
+			$oParserState->consumeUntil(array(';', ParserState::EOF), true, true);
 			return new Charset($sCharset, $iIdentifierLineNum);
 		} else if (self::identifierIs($sIdentifier, 'keyframes')) {
 			$oResult = new KeyFrame($iIdentifierLineNum);
@@ -156,11 +137,7 @@ abstract class CSSList implements Renderable, Commentable {
 				$sPrefix = $mUrl;
 				$mUrl = Value::parsePrimitiveValue($oParserState);
 			}
-			try {
-				$oParserState->consume(';');
-			} catch (UnexpectedEOFException $e) {
-				// Nothing fatal, file ended before ; was found
-			}
+			$oParserState->consumeUntil(array(';', ParserState::EOF), true, true);
 			if ($sPrefix !== null && !is_string($sPrefix)) {
 				throw new UnexpectedTokenException('Wrong namespace prefix', $sPrefix, 'custom', $iIdentifierLineNum);
 			}
