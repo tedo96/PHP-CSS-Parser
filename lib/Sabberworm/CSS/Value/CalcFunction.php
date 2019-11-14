@@ -11,20 +11,21 @@ class CalcFunction extends CSSFunction {
 
 	public static function parse(ParserState $oParserState) {
 		$aOperators = array('+', '-', '*', '/');
-		$aTerminators = array('(', ';', "\n", "\r");
-		$sFunction = $oParserState->consumeUntil($aTerminators, false, true);
-		if ($oParserState->peek(1, -1) != '(') {
+		$sFunction = $oParserState->parseIdentifier();
+		if ($oParserState->peek() != '(') {
 			// Found ; or end of line before an opening bracket
-			throw new UnexpectedTokenException('(', $oParserState->peek(1, -1), 'literal', $oParserState->currentLine());
+			throw new UnexpectedTokenException('(', $oParserState->peek(), 'literal', $oParserState->currentLine());
 		} else if (!in_array($sFunction, array('calc', '-moz-calc', '-webkit-calc'))) {
 			// Found invalid calc definition. Example calc (...
 			throw new UnexpectedTokenException('calc', $sFunction, 'literal', $oParserState->currentLine());
 		}
+		$oParserState->consume('(');
 		$oCalcList = new CalcRuleValueList($oParserState->currentLine());
 		$oList = new RuleValueList(',', $oParserState->currentLine());
 		$iNestingLevel = 0;
 		$iLastComponentType = NULL;
 		while(!$oParserState->comes(')') || $iNestingLevel > 0) {
+			if ($oParserState->isEnd() && $iNestingLevel === 0) break;
 			$oParserState->consumeWhiteSpace();
 			if ($oParserState->comes('(')) {
 				$iNestingLevel++;
@@ -66,7 +67,9 @@ class CalcFunction extends CSSFunction {
 			$oParserState->consumeWhiteSpace();
 		}
 		$oList->addListComponent($oCalcList);
-		$oParserState->consume(')');
+		if (!$oParserState->isEnd()) {
+			$oParserState->consume(')');
+		}
 		return new CalcFunction($sFunction, $oList, ',', $oParserState->currentLine());
 	}
 
