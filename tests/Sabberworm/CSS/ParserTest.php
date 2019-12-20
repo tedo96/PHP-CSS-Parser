@@ -491,6 +491,11 @@ div {height: calc;}';
 	html[dir="rtl"] .super-menu > li:last-of-type {border-left-width: 0;}}
 body {background-color: red;}';
 		$this->assertSame($sExpected, $oDoc->render());
+
+		$oDoc = $this->parsedStructureForFile('invalid-selectors-3', Settings::create()->withMultibyteSupport(true));
+		$sExpected = '#test {color: #fff;}
+@media only screen and (max-width:30000px) {#test2 {color: #fff;}}';
+		$this->assertSame($sExpected, $oDoc->render());
 	}
 
 	function testSelectorEscapesInFile() {
