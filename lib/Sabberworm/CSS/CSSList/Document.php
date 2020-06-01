@@ -80,14 +80,17 @@ class Document extends CSSBlockList {
 		return $aResult;
 	}
 
-	/**
-	 * Expands all shorthand properties to their long value
-	 */
-	public function expandShorthands() {
-		foreach ($this->getAllDeclarationBlocks() as $oDeclaration) {
-			$oDeclaration->expandShorthands();
-		}
-	}
+    /**
+     * Returns all Selector objects found recursively in the tree.
+     * Note that this does not yield the full DeclarationBlock that the selector belongs to (and, currently, there is no way to get to that).
+     * @param $sSpecificitySearch An optional filter by specificity. May contain a comparison operator and a number or just a number (defaults to "==").
+     * @example getSelectorsBySpecificity('>= 100')
+     */
+    public function getSelectorsBySpecificity($sSpecificitySearch = null) {
+        $aResult = array();
+        $this->allSelectors($aResult, $sSpecificitySearch);
+        return $aResult;
+    }
 
 	/**
 	 * Create shorthands properties whenever possible
