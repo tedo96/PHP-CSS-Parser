@@ -477,6 +477,12 @@ div {height: calc;}';
 		$this->assertSame($sExpected, $oDoc->render());
 	}
 
+	function testInvalidGridLineNameInFile() {
+		$oDoc = $this->parsedStructureForFile('invalid-grid-linename', Settings::create()->withMultibyteSupport(true));
+		$sExpected = "div {}";
+		$this->assertSame($sExpected, $oDoc->render());
+	}
+
 	function testUnmatchedBracesInFile() {
 		$oDoc = $this->parsedStructureForFile('unmatched_braces', Settings::create()->withMultibyteSupport(true));
 		$sExpected = 'button, input, checkbox, textarea {outline: 0;margin: 0;}';
