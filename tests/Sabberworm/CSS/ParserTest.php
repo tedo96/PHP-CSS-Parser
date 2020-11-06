@@ -10,7 +10,7 @@ use Sabberworm\CSS\Property\AtRule;
 use Sabberworm\CSS\Value\URL;
 use Sabberworm\CSS\Parsing\UnexpectedTokenException;
 
-class ParserTest extends \PHPUnit_Framework_TestCase {
+class ParserTest extends \PHPunit\Framework\TestCase {
 
 	function testFiles() {
 		$sDirectory = dirname(__FILE__) . '/../../files';
@@ -76,7 +76,9 @@ class ParserTest extends \PHPUnit_Framework_TestCase {
 			$this->assertSame('red', $sColor);
 		}
 		$this->assertSame('#mine {color: red;border-color: #0a64e6;border-color: rgba(10,100,231,.3);outline-color: #222;background-color: #232323;}
-#yours {background-color: hsl(220,10%,220%);background-color: hsla(220,10%,220%,.3);}', $oDoc->render());
+#yours {background-color: hsl(220,10%,220%);background-color: hsla(220,10%,220%,.3);}
+#variables {background-color: rgb(var(--some-rgb));background-color: rgb(var(--r),var(--g),var(--b));background-color: rgb(255,var(--g),var(--b));background-color: rgb(255,255,var(--b));background-color: rgb(255,var(--rg));background-color: hsl(var(--some-hsl));}
+#variables-alpha {background-color: rgba(var(--some-rgb),.1);background-color: rgba(var(--some-rg),255,.1);background-color: hsla(var(--some-hsl),.1);}', $oDoc->render());
 	}
 
 	function testUnicodeParsing() {
@@ -159,6 +161,13 @@ class ParserTest extends \PHPUnit_Framework_TestCase {
 			}
 		}
 		$this->assertEquals(array(new Selector('#test .help', true)), $oDoc->getSelectorsBySpecificity('> 100'));
+		$this->assertEquals(array(new Selector('#test .help', true), new Selector('#file', true)), $oDoc->getSelectorsBySpecificity('>= 100'));
+		$this->assertEquals(array(new Selector('#file', true)), $oDoc->getSelectorsBySpecificity('=== 100'));
+		$this->assertEquals(array(new Selector('#file', true)), $oDoc->getSelectorsBySpecificity('== 100'));
+		$this->assertEquals(array(new Selector('#file', true), new Selector('.help:hover', true), new Selector('li.green', true), new Selector('ol li::before', true)), $oDoc->getSelectorsBySpecificity('<= 100'));
+		$this->assertEquals(array(new Selector('.help:hover', true), new Selector('li.green', true), new Selector('ol li::before', true)), $oDoc->getSelectorsBySpecificity('< 100'));
+		$this->assertEquals(array(new Selector('li.green', true)), $oDoc->getSelectorsBySpecificity('11'));
+		$this->assertEquals(array(new Selector('ol li::before', true)), $oDoc->getSelectorsBySpecificity(3));
 	}
 
 	function testManipulation() {
@@ -214,23 +223,23 @@ body {color: green;}', $oDoc->render());
 		$this->assertSame('#header {margin: 10px 2em 1cm 2%;color: red !important;frequency: 30Hz;}
 body {color: green;}', $oDoc->render());
 	}
-	
+
 	function testRuleGetters() {
 		$oDoc = $this->parsedStructureForFile('values');
 		$aBlocks = $oDoc->getAllDeclarationBlocks();
 		$oHeaderBlock = $aBlocks[0];
 		$oBodyBlock = $aBlocks[1];
 		$aHeaderRules = $oHeaderBlock->getRules('background-');
-		$this->assertSame(2, count($aHeaderRules));
+		$this->assertCount(2, $aHeaderRules);
 		$this->assertSame('background-color', $aHeaderRules[0]->getRule());
 		$this->assertSame('background-color', $aHeaderRules[1]->getRule());
 		$aHeaderRules = $oHeaderBlock->getRulesAssoc('background-');
-		$this->assertSame(1, count($aHeaderRules));
-		$this->assertSame(true, $aHeaderRules['background-color']->getValue() instanceof \Sabberworm\CSS\Value\Color);
+		$this->assertCount(1, $aHeaderRules);
+		$this->assertTrue($aHeaderRules['background-color']->getValue() instanceof \Sabberworm\CSS\Value\Color);
 		$this->assertSame('rgba', $aHeaderRules['background-color']->getValue()->getColorDescription());
 		$oHeaderBlock->removeRule($aHeaderRules['background-color']);
 		$aHeaderRules = $oHeaderBlock->getRules('background-');
-		$this->assertSame(1, count($aHeaderRules));
+		$this->assertCount(1, $aHeaderRules);
 		$this->assertSame('green', $aHeaderRules[0]->getValue());
 	}
 
@@ -319,7 +328,7 @@ foo|test {gaga: 1;}
 |test {gaga: 2;}';
 		$this->assertSame($sExpected, $oDoc->render());
 	}
-	
+
 	function testInnerColors() {
 		$oDoc = $this->parsedStructureForFile('inner-color');
 		$sExpected = 'test {background: -webkit-gradient(linear,0 0,0 bottom,from(#006cad),to(hsl(202,100%,49%)));}';
@@ -366,7 +375,7 @@ foo|test {gaga: 1;}
 		$this->assertSame('@media screen {html {some: -test(val2);}}
 #unrelated {other: yes;}', $oDoc->render());
 	}
-	
+
 	/**
 	* @expectedException Sabberworm\CSS\Parsing\OutputException
 	*/
@@ -374,13 +383,13 @@ foo|test {gaga: 1;}
 		$oDoc = $this->parsedStructureForFile('1readme');
 		$aBlocks = $oDoc->getAllDeclarationBlocks();
 		$oBlock1 = $aBlocks[0];
-		$this->assertSame(true, $oBlock1->removeSelector('html'));
+		$this->assertTrue($oBlock1->removeSelector('html'));
 		$sExpected = '@charset "utf-8";
 @font-face {font-family: "CrassRoots";src: url("../media/cr.ttf");}
 body {font-size: 1.6em;}';
 		$this->assertSame($sExpected, $oDoc->render());
-		$this->assertSame(false, $oBlock1->removeSelector('html'));
-		$this->assertSame(true, $oBlock1->removeSelector('body'));
+		$this->assertFalse($oBlock1->removeSelector('html'));
+		$this->assertTrue($oBlock1->removeSelector('body'));
 		// This tries to output a declaration block without a selector and throws.
 		$oDoc->render();
 	}
@@ -470,6 +479,12 @@ div {height: calc;}';
 		$this->assertSame($sExpected, $oDoc->render());
 	}
 
+	function testInvalidGridLineNameInFile() {
+		$oDoc = $this->parsedStructureForFile('invalid-grid-linename', Settings::create()->withMultibyteSupport(true));
+		$sExpected = "div {}";
+		$this->assertSame($sExpected, $oDoc->render());
+	}
+
 	function testUnmatchedBracesInFile() {
 		$oDoc = $this->parsedStructureForFile('unmatched_braces', Settings::create()->withMultibyteSupport(true));
 		$sExpected = 'button, input, checkbox, textarea {outline: 0;margin: 0;}';
@@ -511,6 +526,12 @@ body {background-color: red;}';
 	html[dir="rtl"] .super-menu > li:first-of-type {border-left-width: 1px;border-right-width: 0;}
 	html[dir="rtl"] .super-menu > li:last-of-type {border-left-width: 0;}}
 body {background-color: red;}';
+		$this->assertSame($sExpected, $oDoc->render());
+	}
+
+	function testIdentifierEscapesInFile() {
+		$oDoc = $this->parsedStructureForFile('identifier-escapes', Settings::create()->withMultibyteSupport(true));
+		$sExpected = 'div {font: 14px Font Awesome\ 5 Pro;font: 14px Font Awesome\} 5 Pro;font: 14px Font Awesome\; 5 Pro;f\;ont: 14px Font Awesome\; 5 Pro;}';
 		$this->assertSame($sExpected, $oDoc->render());
 	}
 
