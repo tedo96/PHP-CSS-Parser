@@ -46,6 +46,10 @@ class ParserState {
 		return $this->iLineNo;
 	}
 
+	public function currentColumn() {
+		return $this->iCurrentPosition;
+	}
+
 	public function getSettings() {
 		return $this->oParserSettings;
 	}
