@@ -12,7 +12,7 @@ class CalcFunction extends CSSFunction
 
     public static function parse(ParserState $oParserState)
     {
-        $aOperators = array('+', '-', '*', '/');
+        $aOperators = ['+', '-', '*', '/'];
         $sFunction = $oParserState->parseIdentifier();
         if ($oParserState->peek() != '(') {
             // Found ; or end of line before an opening bracket

@@ -149,7 +149,7 @@ class ParserState
 
     public function consumeWhiteSpace()
     {
-        $comments = array();
+        $comments = [];
         do {
             while (preg_match('/\\s/isSu', $this->peek()) === 1) {
                 $this->consume(1);
@@ -253,9 +253,9 @@ class ParserState
         return $this->iCurrentPosition >= $this->iLength;
     }
 
-    public function consumeUntil($aEnd, $bIncludeEnd = false, $consumeEnd = false, array &$comments = array())
+    public function consumeUntil($aEnd, $bIncludeEnd = false, $consumeEnd = false, array &$comments = [])
     {
-        $aEnd = is_array($aEnd) ? $aEnd : array($aEnd);
+        $aEnd = is_array($aEnd) ? $aEnd : [$aEnd];
         $out = '';
         $start = $this->iCurrentPosition;
 
@@ -344,7 +344,7 @@ class ParserState
                 return preg_split('//u', $sString, null, PREG_SPLIT_NO_EMPTY);
             } else {
                 $iLength = mb_strlen($sString, $this->sCharset);
-                $aResult = array();
+                $aResult = [];
                 for ($i = 0; $i < $iLength; ++$i) {
                     $aResult[] = mb_substr($sString, $i, 1, $this->sCharset);
                 }
@@ -352,7 +352,7 @@ class ParserState
             }
         } else {
             if ($sString === '') {
-                return array();
+                return [];
             } else {
                 return str_split($sString);
             }
