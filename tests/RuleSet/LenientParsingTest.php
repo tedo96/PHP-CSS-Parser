@@ -8,7 +8,6 @@ use Sabberworm\CSS\Settings;
 
 class LenientParsingTest extends TestCase
 {
-
     /**
      * @expectedException \Sabberworm\CSS\Parsing\UnexpectedTokenException
      */

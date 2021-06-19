@@ -21,7 +21,6 @@ use Sabberworm\CSS\Value\URL;
 
 class ParserTest extends TestCase
 {
-
     public function testFiles()
     {
         $sDirectory = __DIR__ . '/fixtures';
