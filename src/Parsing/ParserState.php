@@ -7,23 +7,51 @@ use Sabberworm\CSS\Settings;
 
 class ParserState
 {
+    /**
+     * @var null
+     */
     const EOF = null;
 
+    /**
+     * @var Settings
+     */
     private $oParserSettings;
 
+    /**
+     * @var string
+     */
     private $sText;
 
+    /**
+     * @var array<int, string>
+     */
     private $aText;
 
+    /**
+     * @var int
+     */
     private $iCurrentPosition;
 
+    /**
+     * @var string
+     */
     private $sCharset;
 
+    /**
+     * @var int
+     */
     private $iLength;
 
+    /**
+     * @var int
+     */
     private $iLineNo;
 	private $iAnchor;
 
+    /**
+     * @param string $sText
+     * @param int $iLineNo
+     */
     public function __construct($sText, Settings $oParserSettings, $iLineNo = 1)
     {
         $this->oParserSettings = $oParserSettings;
@@ -34,6 +62,11 @@ class ParserState
         $this->setCharset($this->oParserSettings->sDefaultCharset);
     }
 
+    /**
+     * @param string $sCharset
+     *
+     * @return void
+     */
     public function setCharset($sCharset)
     {
         $this->sCharset = $sCharset;
@@ -43,36 +76,61 @@ class ParserState
         }
     }
 
+    /**
+     * @return string
+     */
     public function getCharset()
     {
         return $this->sCharset;
     }
 
+    /**
+     * @return int
+     */
     public function currentLine()
     {
         return $this->iLineNo;
     }
 
+    /**
+     * @return int
+     */
     public function currentColumn()
     {
         return $this->iCurrentPosition;
     }
 
+    /**
+     * @return Settings
+     */
     public function getSettings()
     {
         return $this->oParserSettings;
     }
 
-	public function setAnchor() {
-		$this->iAnchor = $this->iCurrentPosition;
-	}
+    /**
+     * @return void
+     */
+    public function setAnchor() {
+        $this->iAnchor = $this->iCurrentPosition;
+    }
 
-	public function backtrackToAnchor() {
-		if ($this->iAnchor !== null) {
-			$this->iCurrentPosition = $this->iAnchor;
-		}
-	}
+    /**
+     * @return void
+     */
+    public function backtrackToAnchor() {
+        if ($this->iAnchor !== null) {
+            $this->iCurrentPosition = $this->iAnchor;
+        }
+    }
 
+    /**
+     * @param bool $bIgnoreCase
+     *
+     * @return string
+     *
+     * @throws UnexpectedTokenException
+     */
     public function parseIdentifier($bIgnoreCase = true)
     {
 		if ($this->isEnd()) {
@@ -96,6 +154,14 @@ class ParserState
         return $sResult;
     }
 
+    /**
+     * @param bool $bIsForIdentifier
+     *
+     * @return string|null
+     *
+     * @throws UnexpectedEOFException
+     * @throws UnexpectedTokenException
+     */
     public function parseCharacter($bIsForIdentifier)
     {
         if ($this->peek() === '\\') {
@@ -151,6 +217,12 @@ class ParserState
         return null;
     }
 
+    /**
+     * @return array<int, Comment>|void
+     *
+     * @throws UnexpectedEOFException
+     * @throws UnexpectedTokenException
+     */
     public function consumeWhiteSpace()
     {
         $comments = [];
@@ -175,6 +247,12 @@ class ParserState
         return $comments;
     }
 
+    /**
+     * @param string $sString
+     * @param bool $bCaseInsensitive
+     *
+     * @return bool
+     */
     public function comes($sString, $bCaseInsensitive = false)
     {
         $sPeek = $this->peek(strlen($sString));
@@ -183,6 +261,12 @@ class ParserState
             : $this->streql($sPeek, $sString, $bCaseInsensitive);
     }
 
+    /**
+     * @param int $iLength
+     * @param int $iOffset
+     *
+     * @return string
+     */
     public function peek($iLength = 1, $iOffset = 0)
     {
         $iOffset += $this->iCurrentPosition;
@@ -192,6 +276,14 @@ class ParserState
         return $this->substr($iOffset, $iLength);
     }
 
+    /**
+     * @param int $mValue
+     *
+     * @return string
+     *
+     * @throws UnexpectedEOFException
+     * @throws UnexpectedTokenException
+     */
     public function consume($mValue = 1)
     {
         if (is_string($mValue)) {
@@ -215,6 +307,15 @@ class ParserState
         }
     }
 
+    /**
+     * @param string $mExpression
+     * @param int|null $iMaxLength
+     *
+     * @return string
+     *
+     * @throws UnexpectedEOFException
+     * @throws UnexpectedTokenException
+     */
     public function consumeExpression($mExpression, $iMaxLength = null)
     {
         $aMatches = null;
@@ -226,7 +327,7 @@ class ParserState
     }
 
     /**
-     * @return false|Comment
+     * @return Comment|false
      */
     public function consumeComment()
     {
@@ -252,6 +353,9 @@ class ParserState
         return $mComment;
     }
 
+    /**
+     * @return bool
+     */
     public function isEnd()
     {
         return $this->iCurrentPosition >= $this->iLength;
@@ -259,6 +363,14 @@ class ParserState
 
     /**
      * @param array<array-key, string>|string $aEnd
+     * @param string $bIncludeEnd
+     * @param string $consumeEnd
+     * @param array<int, Comment> $comments
+     *
+     * @return string
+     *
+     * @throws UnexpectedEOFException
+     * @throws UnexpectedTokenException
      */
     public function consumeUntil($aEnd, $bIncludeEnd = false, $consumeEnd = false, array &$comments = [])
     {
@@ -295,11 +407,21 @@ class ParserState
         );
     }
 
+    /**
+     * @return string
+     */
     private function inputLeft()
     {
         return $this->substr($this->iCurrentPosition, -1);
     }
 
+    /**
+     * @param string $sString1
+     * @param string $sString2
+     * @param bool $bCaseInsensitive
+     *
+     * @return bool
+     */
     public function streql($sString1, $sString2, $bCaseInsensitive = true)
     {
         if ($bCaseInsensitive) {
@@ -309,11 +431,21 @@ class ParserState
         }
     }
 
+    /**
+     * @param int $iAmount
+     *
+     * @return void
+     */
     public function backtrack($iAmount)
     {
         $this->iCurrentPosition -= $iAmount;
     }
 
+    /**
+     * @param string $sString
+     *
+     * @return int
+     */
     public function strlen($sString)
     {
         if ($this->oParserSettings->bMultibyteSupport) {
@@ -323,6 +455,12 @@ class ParserState
         }
     }
 
+    /**
+     * @param int $iStart
+     * @param int $iLength
+     *
+     * @return string
+     */
     private function substr($iStart, $iLength)
     {
         if ($iLength < 0) {
@@ -340,6 +478,11 @@ class ParserState
         return $sResult;
     }
 
+    /**
+     * @param string $sString
+     *
+     * @return string
+     */
     private function strtolower($sString)
     {
         if ($this->oParserSettings->bMultibyteSupport) {
@@ -349,6 +492,11 @@ class ParserState
         }
     }
 
+    /**
+     * @param string $sString
+     *
+     * @return array<int, string>
+     */
     private function strsplit($sString)
     {
         if ($this->oParserSettings->bMultibyteSupport) {
@@ -371,6 +519,13 @@ class ParserState
         }
     }
 
+    /**
+     * @param string $sString
+     * @param string $sNeedle
+     * @param int $iOffset
+     *
+     * @return int|false
+     */
     private function strpos($sString, $sNeedle, $iOffset)
     {
         if ($this->oParserSettings->bMultibyteSupport) {
