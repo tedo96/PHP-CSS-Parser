@@ -975,12 +975,12 @@ body {background-color: red;}';
     }
 
     /**
-     * Parse structure for file.
+     * Parses structure for file.
      *
-     * @param string $sFileName Filename.
-     * @param Settings|null $oSettings Settings.
+     * @param string $sFileName
+     * @param Settings|null $oSettings
      *
-     * @return Document Parsed document.
+     * @return Document parsed document
      */
     private function parsedStructureForFile($sFileName, $oSettings = null)
     {
@@ -1049,8 +1049,6 @@ body {background-color: red;}';
 
     /**
      * @expectedException \Sabberworm\CSS\Parsing\UnexpectedTokenException
-     * Credit: This test by @sabberworm (from
-     *     https://github.com/sabberworm/PHP-CSS-Parser/pull/105#issuecomment-229643910 )
      *
      * @test
      */
