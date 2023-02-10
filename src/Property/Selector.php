@@ -107,6 +107,7 @@ class Selector
      */
     public function setSelector($sSelector)
     {
+        $sSelector = str_replace([' :', ' : ', ': '], ' ', $sSelector);
         $this->sSelector = trim($sSelector);
         $this->iSpecificity = null;
     }
